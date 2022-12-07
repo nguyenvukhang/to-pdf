@@ -1,0 +1,22 @@
+{
+  "name": "to-pdf",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "yarn build && node dist/index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.11"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": true,
+    "arrowParens": "always"
+  }
+}
