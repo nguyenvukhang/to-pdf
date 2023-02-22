@@ -6,7 +6,7 @@ import type { PDFOptions, WaitForOptions } from 'puppeteer'
 const exit = (c: number) => process.exit(c)
 const outDir = join(process.cwd(), 'output')
 
-type Input = { prefix?: string; urls: string[] }
+type Input = { prefix: string; urls: string[] }
 type Options = {
   viewport: { width: number; height: number }
   goto: WaitForOptions
@@ -42,6 +42,7 @@ function getInput(file = 'pages.json'): Input {
     console.warn('Prefix should be a string: `' + input.prefix + '`')
     exit(1)
   }
+  input.prefix = input.prefix || ''
   input.urls = Array.isArray(input.urls) ? input.urls.map((v) => `${v}`) : []
   return input
 }
