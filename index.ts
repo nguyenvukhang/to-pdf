@@ -1,29 +1,36 @@
 import { launch } from 'puppeteer'
 import { readFileSync, writeFileSync, rmSync, mkdirSync, existsSync } from 'fs'
-import { basename, extname, join, resolve } from 'path'
+import { join, resolve } from 'path'
 import type { PDFOptions, WaitForOptions } from 'puppeteer'
 
 const exit = (c: number) => process.exit(c)
 const outDir = join(process.cwd(), 'output')
 
-type Input = { prefix: string; urls: string[] }
+type Print = { url: string; out: string; margin?: string }
+type Input = { prefix: string; print: Print[] }
+type RenderProps = { url: string; out: string; margin: string }
 type Options = {
   viewport: { width: number; height: number }
   goto: WaitForOptions
   pdf: PDFOptions
 }
 
-async function render(url: string, outputFile: string) {
-  outputFile = join(outDir, outputFile)
-  rmSync(outputFile, { force: true })
-  console.log(`rendering ${url.slice(0, Math.min(50, url.length))}...`)
+async function render(p: RenderProps) {
+  p.out = join(outDir, p.out)
+  rmSync(p.out, { force: true })
+  console.log(`rendering ${p.url.slice(0, Math.min(50, p.url.length))}...`)
   const opts: Options = {
     viewport: { width: 1600, height: 1200 },
     goto: { waitUntil: 'networkidle0' },
     pdf: {
       format: 'A4',
       printBackground: true,
-      margin: { top: '2cm', bottom: '2cm', left: '2cm', right: '2cm' },
+      margin: {
+        top: p.margin,
+        bottom: p.margin,
+        left: p.margin,
+        right: p.margin,
+      },
     },
   }
   return launch({
@@ -31,33 +38,34 @@ async function render(url: string, outputFile: string) {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   })
     .then((browser) => browser.newPage())
-    .then((page) => page.goto(url, opts.goto).then(() => page))
+    .then((page) => page.goto(p.url, opts.goto).then(() => page))
     .then((page) => page.pdf(opts.pdf))
-    .then((data) => writeFileSync(outputFile, data))
+    .then((data) => writeFileSync(p.out, data))
 }
 
-function getInput(file = 'pages.json'): Input {
-  const input = JSON.parse(readFileSync(resolve(file), 'utf8')) as Input
-  if (input.prefix && typeof input.prefix !== 'string') {
-    console.warn('Prefix should be a string: `' + input.prefix + '`')
-    exit(1)
-  }
-  input.prefix = input.prefix || ''
-  input.urls = Array.isArray(input.urls) ? input.urls.map((v) => `${v}`) : []
-  return input
+function assert(b: boolean, msg: string) {
+  if (b) return
+  console.warn(msg)
+  exit(1)
 }
 
-const { prefix, urls } = getInput()
+function getInput(file = 'print.json'): Input {
+  const x = JSON.parse(readFileSync(resolve(file), 'utf8')) as Input
+  assert(!!x.print, 'Supply a list of print jobs.')
+  x.prefix = x.prefix || ''
+  return x
+}
 
-if (urls.length > 0 && !existsSync(outDir)) mkdirSync(outDir)
+const { prefix, print } = getInput()
+
+if (print.length > 0 && !existsSync(outDir)) mkdirSync(outDir)
 
 const tasks: Promise<any>[] = []
-urls.forEach((url) => {
+print.forEach(({ url, margin, out }) => {
   url = prefix + url
-  const output = basename(url, extname(url)) + '.pdf'
   tasks.push(
-    render(url, output)
-      .then(() => console.log('done:', output))
+    render({ url, out, margin: margin || '2cm' })
+      .then(() => console.log('done:', out))
       .catch(console.log)
   )
 })

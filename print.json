@@ -1,0 +1,10 @@
+{
+  "//prefix": "file:///Users/khang/uni/MA2202/html/build/",
+  "print": [
+    {
+      "url": "http://localhost:3000",
+      "out": "resume.pdf",
+      "margin": "0cm"
+    }
+  ]
+}
