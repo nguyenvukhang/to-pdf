@@ -34,6 +34,7 @@ async function render(p: RenderProps) {
     },
   }
   return launch({
+    product: 'chrome',
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   })
